@@ -1,0 +1,122 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xmage-config
+data:
+  XMAGE_DOCKER_SERVER_ADDRESS: "xmage.games.ragazzilab.com"
+  XMAGE_DOCKER_PORT: "17171"
+  XMAGE_DOCKER_SECONDARY_BIND_PORT: "17179"
+  XMAGE_DOCKER_MAX_SECONDS_IDLE: "3600"
+  XMAGE_DOCKER_AUTHENTICATION_ACTIVATED: "false"  #shit's broke
+  XMAGE_DOCKER_SERVER_NAME: "mage-server"
+  XMAGE_DOCKER_ADMIN_PASSWORD: "password"
+  XMAGE_DOCKER_MAX_GAME_THREADS: "20"
+  XMAGE_DOCKER_MIN_USERNAME_LENGTH: "3"
+  XMAGE_DOCKER_MAX_USERNAME_LENGTH: "14"
+  XMAGE_DOCKER_MIN_PASSWORD_LENGTH: "4"
+  XMAGE_DOCKER_MAX_PASSWORD_LENGTH: "20"
+  XMAGE_DOCKER_MAILGUN_API_KEY: "X"
+  XMAGE_DOCKER_MAILGUN_DOMAIN: "X"
+  XMAGE_DOCKER_SERVER_MSG: "YO"
+  XMAGE_DOCKER_MADBOT_ENABLED: "1"
+  XMAGE_DOCKER_MAILSMTPHOST: ""
+  XMAGE_DOCKER_MAILSMTPPORT: "465"
+  XMAGE_DOCKER_MAILUSER: ""
+  XMAGE_DOCKER_MAILPASS: ""
+  XMAGE_DOCKER_MAILFROM: ""
+  JAVA_MIN_MEMORY: "256M"
+  JAVA_MAX_MEMORY: "4G"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: xmage
+  name: xmage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: xmage
+  template:
+    metadata:
+      labels:
+        run: xmage
+      annotations:
+        backup.velero.io/backup-volumes: xmage-db,xmage-saved
+    spec:
+      volumes:
+      - name: xmage-db
+        persistentVolumeClaim:
+          claimName: vol-tanzu-xmage-db
+      # - name: xmage-saved
+      #   persistentVolumeClaim:
+      #     claimName: vol-tanzu-xmage-saved
+      containers:
+      - image: harbor.ragazzilab.com/library/xmagebeta-test:latest #flippyboy/xmage-alpine:latest #ragazzilab/docker-xmage-alpine:latest
+        imagePullPolicy: Always
+        name: xmage
+        ports:
+        - containerPort: 17171
+          name: primary
+        - containerPort: 17179
+          name: secondary
+        envFrom:
+        - configMapRef:
+            name: xmage-config
+        volumeMounts:
+        - mountPath: "/xmage/mage-server/db"
+          name: xmage-db
+        # - mountPath: "/xmage/mage-server/saved"
+        #   name: xmage-saved
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "0.2"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vol-tanzu-xmage-db
+spec:
+  storageClassName: tanzu
+  accessModes:
+  - ReadWriteOnce
+  resources:
+     requests:
+       storage: 2Gi
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: vol-tanzu-xmage-saved
+# spec:
+#   storageClassName: tanzu
+#   accessModes:
+#   - ReadWriteOnce
+#   resources:
+#      requests:
+#        storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xmage-lb
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: xmage.demo.ragazzilab.com
+  labels:
+    run: xmage
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 17171
+    name: primary
+    protocol: TCP
+    targetPort: 17171
+  - port: 17179
+    name: secondary
+    protocol: TCP
+    targetPort: 17179ping
+  selector:
+    run: xmage
