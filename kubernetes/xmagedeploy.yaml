@@ -54,7 +54,7 @@ spec:
       #   persistentVolumeClaim:
       #     claimName: vol-tanzu-xmage-saved
       containers:
-      - image: harbor.ragazzilab.com/library/xmagebeta-test:latest #flippyboy/xmage-alpine:latest #ragazzilab/docker-xmage-alpine:latest
+      - image: ragazzilab/docker-xmagebeta-alpine:latest #flippyboy/xmage-alpine:latest #ragazzilab/docker-xmage-alpine:latest
         imagePullPolicy: Always
         name: xmage
         ports:
