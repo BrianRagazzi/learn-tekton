@@ -2,13 +2,12 @@ FROM alpine:latest
 
 
 # Configuration variables
-ENV HUGO_VERSION 0.92.1
+ENV HUGO_VERSION 0.101.0
 ENV HUGO_BINARY hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz
 ENV SITE_DIR '/usr/share/blog'
 
 # Download and install hugo
 RUN set -ex && \
-    apk --no-cache -U upgrade && \
     apk --no-cache add curl ca-certificates git asciidoc && \
 				apk --no-cache add --update git npm libc6-compat libstdc++ && \
     curl -sL -o /tmp/hugo_${HUGO_VERSION}_Linux-64bit.tar.gz \
