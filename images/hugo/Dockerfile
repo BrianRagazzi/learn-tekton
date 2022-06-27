@@ -2,7 +2,8 @@ FROM alpine:latest
 
 
 # Configuration variables
-ENV HUGO_VERSION 0.101.0
+# ENV HUGO_VERSION 0.101.0
+ARG HUGO_VERSION
 ENV HUGO_BINARY hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz
 ENV SITE_DIR '/usr/share/blog'
 
